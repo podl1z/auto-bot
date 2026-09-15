@@ -13,6 +13,7 @@ from aiogram.types import BotCommand, BotCommandScopeChat, BotCommandScopeDefaul
 from bot.config import ConfigError, load_config
 from bot.db import Database
 from bot.handlers import admin, greeting
+from bot.middlewares import AdminMenuMiddleware
 
 logger = logging.getLogger("bot")
 
@@ -36,9 +37,14 @@ ADMIN_COMMANDS = PUBLIC_COMMANDS + [
 ]
 
 
-async def setup_commands(bot: Bot, admin_ids: frozenset[int]) -> None:
-    """Всем — две команды, админам в их личке — полный список."""
+async def setup_commands(bot: Bot, admin_ids: frozenset[int]) -> set[int]:
+    """Всем — две команды, админам в их личке — полный список.
+
+    Возвращает id админов, которым меню уже доставлено; остальным его поставит
+    AdminMenuMiddleware, когда они впервые напишут боту.
+    """
     await bot.set_my_commands(PUBLIC_COMMANDS, scope=BotCommandScopeDefault())
+    done: set[int] = set()
     for admin_id in admin_ids:
         try:
             await bot.set_my_commands(
@@ -46,7 +52,12 @@ async def setup_commands(bot: Bot, admin_ids: frozenset[int]) -> None:
             )
         except TelegramAPIError as exc:
             # Обычная причина: админ ещё ни разу не написал боту.
-            logger.warning("Меню для админа %s не поставилось: %s", admin_id, exc)
+            logger.info(
+                "Меню админу %s поставлю, когда он напишет боту (%s)", admin_id, exc
+            )
+        else:
+            done.add(admin_id)
+    return done
 
 
 async def main() -> None:
@@ -81,7 +92,12 @@ async def main() -> None:
                 "ADMIN_IDS пуст — админ-команды недоступны никому. "
                 "Узнай свой ID у @userinfobot и впиши его в .env"
             )
-        await setup_commands(bot, config.admin_ids)
+        menu_done = await setup_commands(bot, config.admin_ids)
+        # Именно outer: обычный middleware сработал бы только на сообщениях,
+        # которые дошли до хендлера, а меню нужно ставить на любом первом.
+        dp.message.outer_middleware(
+            AdminMenuMiddleware(config.admin_ids, ADMIN_COMMANDS, menu_done)
+        )
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(bot)
     finally:
