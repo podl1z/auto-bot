@@ -11,3 +11,6 @@ data/
 *.egg-info/
 build/
 dist/
+node_modules/
+.wrangler/
+worker/migrate.sql

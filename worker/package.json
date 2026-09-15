@@ -1,0 +1,23 @@
+{
+  "name": "auto-bot-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:local": "wrangler d1 execute auto-bot --local --file=schema.sql",
+    "db:remote": "wrangler d1 execute auto-bot --remote --file=schema.sql"
+  },
+  "dependencies": {
+    "grammy": "^1.30.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260915.1",
+    "typescript": "^5.6.0",
+    "vitest": "^5.0.1",
+    "wrangler": "^4.0.0"
+  }
+}

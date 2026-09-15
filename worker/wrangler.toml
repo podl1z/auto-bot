@@ -1,0 +1,13 @@
+name = "auto-bot"
+main = "src/index.ts"
+compatibility_date = "2026-09-15"
+compatibility_flags = ["nodejs_compat"]
+
+# database_id подставится командой `wrangler d1 create auto-bot`.
+[[d1_databases]]
+binding = "DB"
+database_name = "auto-bot"
+database_id = "ЗАПОЛНИ_ПОСЛЕ_d1_create"
+
+# BOT_TOKEN, ADMIN_IDS и WEBHOOK_SECRET задаются через `wrangler secret put`,
+# в репозиторий они не попадают.
